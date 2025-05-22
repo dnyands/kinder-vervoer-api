@@ -11,7 +11,10 @@ import driversRouter from './routes/drivers.js';
 import pickupRoutesRouter from './routes/pickup-routes.js';
 import authRouter from './routes/auth.js';
 import uploadRoutes from './routes/uploads.js';
+import usersRouter from './routes/users.js';
+import feePeriodsRouter from './routes/fee-periods.js';
 import accountsRouter from './routes/accounts.js';
+import subscriptionsRouter from './routes/subscriptions.js';
 
 // Create upload directories if they don't exist
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -58,11 +61,14 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/auth', authRouter);
-app.use('/accounts', accountsRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/fee-periods', feePeriodsRouter);
+app.use('/api/accounts', accountsRouter);
 app.use('/api/students', studentsRouter);
 app.use('/api/drivers', driversRouter);
 app.use('/api/pickup-routes', pickupRoutesRouter);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/subscriptions', subscriptionsRouter);
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
