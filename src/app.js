@@ -1,10 +1,25 @@
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import studentsRouter from './routes/students.js';
 import driversRouter from './routes/drivers.js';
 import pickupRoutesRouter from './routes/pickup-routes.js';
 import authRouter from './routes/auth.js';
+import uploadRoutes from './routes/uploads.js';
+
+// Create upload directories if they don't exist
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadDirs = ['uploads/documents', 'uploads/profile-pictures'];
+
+uploadDirs.forEach(dir => {
+  const fullPath = path.join(__dirname, '..', dir);
+  if (!fs.existsSync(fullPath)) {
+    fs.mkdirSync(fullPath, { recursive: true });
+  }
+});
 
 dotenv.config();
 
@@ -19,6 +34,10 @@ app.use('/api/auth', authRouter);
 app.use('/api/students', studentsRouter);
 app.use('/api/drivers', driversRouter);
 app.use('/api/pickup-routes', pickupRoutesRouter);
+app.use('/api/uploads', uploadRoutes);
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.get("/", (req, res) => res.send("School Dropoff API is running"));
 

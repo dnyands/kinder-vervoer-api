@@ -1,4 +1,6 @@
 -- Drop tables if they exist
+DROP TABLE IF EXISTS file_uploads;
+DROP TABLE IF EXISTS password_resets;
 DROP TABLE IF EXISTS route_assignments;
 DROP TABLE IF EXISTS pickup_routes;
 DROP TABLE IF EXISTS students;
@@ -11,6 +13,37 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL,
+    full_name VARCHAR(255),
+    profile_picture_url TEXT,
+    phone_number VARCHAR(20),
+    is_verified BOOLEAN DEFAULT FALSE,
+    verification_token VARCHAR(255),
+    last_login TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create password resets table
+CREATE TABLE password_resets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    token VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create file uploads table
+CREATE TABLE file_uploads (
+    id SERIAL PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    path TEXT NOT NULL,
+    url TEXT NOT NULL,
+    uploaded_by INTEGER REFERENCES users(id),
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
