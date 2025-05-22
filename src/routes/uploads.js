@@ -10,7 +10,9 @@ const router = express.Router();
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/documents');
+    const uploadType = req.params.uploadType;
+    const folder = uploadType === 'vehicle-images' ? 'uploads/vehicles' : 'uploads/documents';
+    cb(null, folder);
   },
   filename: (req, file, cb) => {
     const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
@@ -38,39 +40,69 @@ const upload = multer({
 });
 
 // Upload file
-router.post('/:entityType/:entityId', authenticateToken, upload.single('file'), async (req, res) => {
+// Upload driver documents or vehicle images
+router.post('/drivers/:driverId/:uploadType', authenticateToken, upload.array('files', 5), async (req, res) => {
   try {
-    const { entityType, entityId } = req.params;
-    const file = req.file;
+    const { driverId, uploadType } = req.params;
+    const files = req.files;
 
-    if (!file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
     }
 
-    // Validate entity exists based on type
-    let entityExists = false;
-    switch (entityType) {
-      case 'student':
-        const student = await db.query('SELECT id FROM students WHERE id = $1', [entityId]);
-        entityExists = student.rows.length > 0;
-        break;
-      case 'driver':
-        const driver = await db.query('SELECT id FROM drivers WHERE id = $1', [entityId]);
-        entityExists = driver.rows.length > 0;
-        break;
-      case 'route':
-        const route = await db.query('SELECT id FROM pickup_routes WHERE id = $1', [entityId]);
-        entityExists = route.rows.length > 0;
-        break;
-      default:
-        return res.status(400).json({ error: 'Invalid entity type' });
+    if (!['documents', 'vehicle-images'].includes(uploadType)) {
+      return res.status(400).json({ error: 'Invalid upload type' });
     }
 
-    if (!entityExists) {
-      return res.status(404).json({ error: 'Entity not found' });
+    // Validate driver exists
+    const driver = await db.query('SELECT id FROM drivers WHERE id = $1', [driverId]);
+    if (driver.rows.length === 0) {
+      return res.status(404).json({ error: 'Driver not found' });
     }
 
-    const fileUrl = `/uploads/documents/${file.filename}`;
+    const uploadResults = [];
+    for (const file of files) {
+      const fileUrl = `/${uploadType === 'vehicle-images' ? 'uploads/vehicles' : 'uploads/documents'}/${file.filename}`;
+      
+      // Insert into appropriate table based on upload type
+      if (uploadType === 'vehicle-images') {
+        const result = await db.query(
+          `INSERT INTO driver_vehicle_images (
+            driver_id,
+            image_type,
+            file_name,
+            file_path,
+            mime_type,
+            status
+          ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+          [driverId, 'vehicle', file.filename, fileUrl, file.mimetype, 'pending']
+        );
+        uploadResults.push(result.rows[0]);
+      } else {
+        const result = await db.query(
+          `INSERT INTO driver_documents (
+            driver_id,
+            document_type,
+            file_name,
+            file_path,
+            mime_type,
+            status
+          ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+          [driverId, 'license', file.filename, fileUrl, file.mimetype, 'pending']
+        );
+        uploadResults.push(result.rows[0]);
+      }
+    }
+
+    // Update driver status
+    await db.query(
+      `UPDATE drivers 
+       SET ${uploadType === 'vehicle-images' ? 'vehicle_images_verified' : 'documents_verified'} = false 
+       WHERE id = $1`,
+      [driverId]
+    );
+
+    res.status(201).json(uploadResults);
 
     const result = await db.query(
       `INSERT INTO file_uploads (
@@ -104,16 +136,87 @@ router.post('/:entityType/:entityId', authenticateToken, upload.single('file'), 
 });
 
 // Get files for entity
-router.get('/:entityType/:entityId', authenticateToken, async (req, res) => {
+// Get driver documents and vehicle images
+router.get('/drivers/:driverId/files', authenticateToken, async (req, res) => {
   try {
-    const { entityType, entityId } = req.params;
+    const { driverId } = req.params;
 
-    const files = await db.query(
-      'SELECT * FROM file_uploads WHERE entity_type = $1 AND entity_id = $2 ORDER BY created_at DESC',
-      [entityType, entityId]
+    const documents = await db.query(
+      'SELECT * FROM driver_documents WHERE driver_id = $1 ORDER BY created_at DESC',
+      [driverId]
     );
 
-    res.json(files.rows);
+    const vehicleImages = await db.query(
+      'SELECT * FROM driver_vehicle_images WHERE driver_id = $1 ORDER BY created_at DESC',
+      [driverId]
+    );
+
+    res.json({
+      documents: documents.rows,
+      vehicleImages: vehicleImages.rows
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Verify driver documents or vehicle images
+router.post('/drivers/:driverId/verify/:uploadType', authenticateToken, async (req, res) => {
+  try {
+    const { driverId, uploadType } = req.params;
+    const { fileIds, approved } = req.body;
+
+    if (!Array.isArray(fileIds) || fileIds.length === 0) {
+      return res.status(400).json({ error: 'No files specified for verification' });
+    }
+
+    if (!['documents', 'vehicle-images'].includes(uploadType)) {
+      return res.status(400).json({ error: 'Invalid upload type' });
+    }
+
+    const table = uploadType === 'vehicle-images' ? 'driver_vehicle_images' : 'driver_documents';
+    const status = approved ? 'approved' : 'rejected';
+
+    // Update file statuses
+    await db.query(
+      `UPDATE ${table} 
+       SET status = $1, verified_at = CURRENT_TIMESTAMP, verified_by = $2 
+       WHERE id = ANY($3::int[])`,
+      [status, req.user.id, fileIds]
+    );
+
+    // Check if all required files are approved
+    const pendingFiles = await db.query(
+      `SELECT COUNT(*) FROM ${table} 
+       WHERE driver_id = $1 AND status != 'approved'`,
+      [driverId]
+    );
+
+    if (pendingFiles.rows[0].count === '0') {
+      // All files are approved, update driver status
+      await db.query(
+        `UPDATE drivers 
+         SET ${uploadType === 'vehicle-images' ? 'vehicle_images_verified' : 'documents_verified'} = true 
+         WHERE id = $1`,
+        [driverId]
+      );
+
+      // Check if both documents and vehicle images are verified
+      const driver = await db.query(
+        'SELECT documents_verified, vehicle_images_verified FROM drivers WHERE id = $1',
+        [driverId]
+      );
+
+      if (driver.rows[0].documents_verified && driver.rows[0].vehicle_images_verified) {
+        // Activate the driver's account
+        await db.query(
+          'UPDATE drivers SET status = $1 WHERE id = $2',
+          ['active', driverId]
+        );
+      }
+    }
+
+    res.json({ message: 'Verification status updated successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

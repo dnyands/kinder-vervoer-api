@@ -60,15 +60,61 @@ router.get("/:id", authenticateToken, async (req, res) => {
 });
 
 // Create new driver
+// Helper function to check for existing driver details
+const checkExistingDriver = async (contact_number, license_number, excludeId = null) => {
+  let query = `
+    SELECT id, contact_number, license_number 
+    FROM drivers 
+    WHERE contact_number = $1 OR license_number = $2
+  `;
+  const values = [contact_number, license_number];
+  
+  if (excludeId) {
+    query += ` AND id != $3`;
+    values.push(excludeId);
+  }
+  
+  const result = await db.query(query, values);
+  const existing = result.rows[0];
+  
+  if (existing) {
+    const errors = [];
+    if (existing.contact_number === contact_number) errors.push('Contact number already registered');
+    if (existing.license_number === license_number) errors.push('License number already registered');
+    return errors;
+  }
+  return null;
+};
+
 router.post("/", authenticateToken, authorizeRole(['admin']), async (req, res) => {
   try {
-    const { name, license_number, phone_number } = req.body;
+    const { 
+      name,
+      contact_number,
+      license_number,
+      vehicle_type,
+      vehicle_registration,
+      status
+    } = req.body;
+
+    // Check for existing driver details
+    const existingErrors = await checkExistingDriver(contact_number, license_number);
+    if (existingErrors) {
+      return res.status(400).json({ errors: existingErrors });
+    }
 
     const result = await db.query(
-      `INSERT INTO drivers (name, license_number, phone_number) 
-       VALUES ($1, $2, $3) 
-       RETURNING *`,
-      [name, license_number, phone_number]
+      `INSERT INTO drivers (
+        name,
+        contact_number,
+        license_number,
+        vehicle_type,
+        vehicle_registration,
+        status
+      ) 
+      VALUES ($1, $2, $3, $4, $5, $6) 
+      RETURNING *`,
+      [name, contact_number, license_number, vehicle_type, vehicle_registration, status]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -82,17 +128,32 @@ router.post("/", authenticateToken, authorizeRole(['admin']), async (req, res) =
 // Update driver
 router.put("/:id", authenticateToken, authorizeRole(['admin']), async (req, res) => {
   try {
-    const { name, license_number, phone_number, status } = req.body;
+    const { 
+      name,
+      contact_number,
+      license_number,
+      vehicle_type,
+      vehicle_registration,
+      status 
+    } = req.body;
+
+    // Check for existing driver details, excluding current driver
+    const existingErrors = await checkExistingDriver(contact_number, license_number, req.params.id);
+    if (existingErrors) {
+      return res.status(400).json({ errors: existingErrors });
+    }
 
     const result = await db.query(
       `UPDATE drivers 
        SET name = $1, 
-           license_number = $2, 
-           phone_number = $3,
-           status = $4
-       WHERE id = $5 
+           contact_number = $2, 
+           license_number = $3, 
+           vehicle_type = $4,
+           vehicle_registration = $5,
+           status = $6
+       WHERE id = $7 
        RETURNING *`,
-      [name, license_number, phone_number, status, req.params.id]
+      [name, contact_number, license_number, vehicle_type, vehicle_registration, status, req.params.id]
     );
 
     if (result.rows.length === 0) {

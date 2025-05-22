@@ -54,6 +54,24 @@ router.get("/:id", authenticateToken, async (req, res) => {
 });
 
 // Create new student
+// Helper function to check for existing guardian phone
+const checkExistingGuardianPhone = async (guardian_phone, excludeId = null) => {
+  let query = `
+    SELECT id, guardian_phone 
+    FROM students 
+    WHERE guardian_phone = $1
+  `;
+  const values = [guardian_phone];
+  
+  if (excludeId) {
+    query += ` AND id != $2`;
+    values.push(excludeId);
+  }
+  
+  const result = await db.query(query, values);
+  return result.rows[0];
+};
+
 router.post("/", authenticateToken, authorizeRole(['admin']), async (req, res) => {
   try {
     const { 
@@ -64,6 +82,14 @@ router.post("/", authenticateToken, authorizeRole(['admin']), async (req, res) =
       pickup_address, 
       dropoff_address 
     } = req.body;
+
+    // Check for existing guardian phone
+    const existingStudent = await checkExistingGuardianPhone(guardian_phone);
+    if (existingStudent) {
+      return res.status(400).json({ 
+        error: 'Guardian phone number already registered with another student' 
+      });
+    }
 
     const result = await db.query(
       `INSERT INTO students (
@@ -96,6 +122,14 @@ router.put("/:id", authenticateToken, authorizeRole(['admin']), async (req, res)
       dropoff_address,
       status 
     } = req.body;
+
+    // Check for existing guardian phone, excluding current student
+    const existingStudent = await checkExistingGuardianPhone(guardian_phone, req.params.id);
+    if (existingStudent) {
+      return res.status(400).json({ 
+        error: 'Guardian phone number already registered with another student' 
+      });
+    }
 
     const result = await db.query(
       `UPDATE students 
