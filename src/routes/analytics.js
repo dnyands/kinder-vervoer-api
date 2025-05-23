@@ -1,0 +1,45 @@
+import express from 'express';
+import { authenticateToken } from '../middleware/auth.js';
+import { checkRole } from '../middleware/roles.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
+import {
+  getDriverCountByProvince,
+  getStudentCountByTown,
+  getAverageTripDuration,
+  getOntimePercentage
+} from '../controllers/analyticsController.js';
+
+const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Analytics
+ *   description: Analytics endpoints
+ */
+
+router.get('/driver-count-by-province',
+  authenticateToken,
+  checkRole(['admin']),
+  asyncHandler(getDriverCountByProvince)
+);
+
+router.get('/student-count-by-town',
+  authenticateToken,
+  checkRole(['admin']),
+  asyncHandler(getStudentCountByTown)
+);
+
+router.get('/average-trip-duration',
+  authenticateToken,
+  checkRole(['admin']),
+  asyncHandler(getAverageTripDuration)
+);
+
+router.get('/ontime-percentage',
+  authenticateToken,
+  checkRole(['admin']),
+  asyncHandler(getOntimePercentage)
+);
+
+export default router;
