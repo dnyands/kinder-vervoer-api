@@ -1,0 +1,32 @@
+{
+  "alerts": {
+    "route_deviation": "Dereva ametoka kilomita {deviation} kutoka njia iliyopangwa",
+    "late_arrival": "Dereva anachelewa dakika {delay}",
+    "no_gps": "Ishara ya GPS imepotea kwa zaidi ya dakika 10"
+  },
+  "validation": {
+    "required": "{field} inahitajika",
+    "invalid": "{field} si sahihi"
+  },
+  "trips": {
+    "status": {
+      "pending": "Inasubiri",
+      "assigned": "Imepangiwa",
+      "in_progress": "Inaendelea",
+      "completed": "Imekamilika",
+      "cancelled": "Imeghairiwa"
+    }
+  },
+  "drivers": {
+    "status": {
+      "active": "Anafanya kazi",
+      "inactive": "Hayupo kazini",
+      "suspended": "Amesimamishwa"
+    },
+    "documents": {
+      "license": "Leseni ya Udereva",
+      "registration": "Usajili wa Gari",
+      "insurance": "Bima"
+    }
+  }
+}

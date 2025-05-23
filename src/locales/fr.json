@@ -1,0 +1,32 @@
+{
+  "alerts": {
+    "route_deviation": "Le chauffeur s'est écarté de {deviation}km de l'itinéraire prévu",
+    "late_arrival": "Le chauffeur a {delay} minutes de retard",
+    "no_gps": "Signal GPS perdu depuis plus de 10 minutes"
+  },
+  "validation": {
+    "required": "{field} est requis",
+    "invalid": "{field} invalide"
+  },
+  "trips": {
+    "status": {
+      "pending": "En attente",
+      "assigned": "Assigné",
+      "in_progress": "En cours",
+      "completed": "Terminé",
+      "cancelled": "Annulé"
+    }
+  },
+  "drivers": {
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif",
+      "suspended": "Suspendu"
+    },
+    "documents": {
+      "license": "Permis de conduire",
+      "registration": "Carte grise",
+      "insurance": "Assurance"
+    }
+  }
+}

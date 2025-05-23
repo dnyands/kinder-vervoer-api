@@ -1,0 +1,32 @@
+{
+  "alerts": {
+    "route_deviation": "Driver has deviated {deviation}km from planned route",
+    "late_arrival": "Driver is running {delay} minutes late",
+    "no_gps": "Lost GPS signal from driver for over 10 minutes"
+  },
+  "validation": {
+    "required": "{field} is required",
+    "invalid": "Invalid {field}"
+  },
+  "trips": {
+    "status": {
+      "pending": "Pending",
+      "assigned": "Assigned",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "drivers": {
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "suspended": "Suspended"
+    },
+    "documents": {
+      "license": "Driver's License",
+      "registration": "Vehicle Registration",
+      "insurance": "Insurance"
+    }
+  }
+}
