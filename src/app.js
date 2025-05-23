@@ -1,4 +1,8 @@
 import express from 'express';
+import helmet from 'helmet';
+import { apiLimiter, authLimiter, corsOptions, helmetOptions } from './config/security.js';
+import { httpLogger } from './services/loggingService.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './swagger/swagger.js';
 import { createServer } from 'http';
@@ -49,11 +53,18 @@ const server = createServer(app);
 // Initialize WebSocket service
 initializeWebSocket(server);
 
-app.use(cors({
-  origin: config.server.frontendUrl,
-  credentials: true
-}));
-app.use(express.json());
+app.use(cors(corsOptions));
+// Security middleware
+app.use(helmet(helmetOptions));
+app.use(httpLogger);
+
+// Rate limiting
+app.use('/api/', apiLimiter);
+app.use('/api/auth/login', authLimiter);
+
+// Body parsing
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Logging middleware
 app.use(morgan('combined', {
@@ -97,6 +108,10 @@ app.use('/api/lookups', lookupRoutes);
 app.use('/api/pickup-routes', pickupRoutesRouter);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/subscriptions', subscriptionsRouter);
+
+// Error handling
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));

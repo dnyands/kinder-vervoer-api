@@ -1,0 +1,40 @@
+export const ROLES = {
+  SUPER_ADMIN: 'super_admin',
+  ADMIN: 'admin',
+  MODERATOR: 'moderator'
+};
+
+export const PERMISSIONS = {
+  MANAGE_USERS: 'manage_users',
+  VIEW_USERS: 'view_users',
+  MANAGE_LOOKUPS: 'manage_lookups',
+  VIEW_LOOKUPS: 'view_lookups',
+  VIEW_ANALYTICS: 'view_analytics',
+  MANAGE_DRIVERS: 'manage_drivers',
+  MANAGE_STUDENTS: 'manage_students',
+  MANAGE_PARENTS: 'manage_parents',
+  MANAGE_SCHOOLS: 'manage_schools',
+  MANAGE_ROUTES: 'manage_routes',
+  VIEW_MONITORING: 'view_monitoring',
+  MANAGE_PAYMENTS: 'manage_payments'
+};
+
+export const ROLE_PERMISSIONS = {
+  [ROLES.SUPER_ADMIN]: Object.values(PERMISSIONS),
+  [ROLES.ADMIN]: [
+    PERMISSIONS.MANAGE_USERS,
+    PERMISSIONS.MANAGE_LOOKUPS,
+    PERMISSIONS.VIEW_ANALYTICS,
+    PERMISSIONS.MANAGE_DRIVERS,
+    PERMISSIONS.MANAGE_STUDENTS,
+    PERMISSIONS.MANAGE_PARENTS,
+    PERMISSIONS.MANAGE_SCHOOLS,
+    PERMISSIONS.MANAGE_ROUTES,
+    PERMISSIONS.VIEW_MONITORING
+  ],
+  [ROLES.MODERATOR]: [
+    PERMISSIONS.VIEW_USERS,
+    PERMISSIONS.VIEW_LOOKUPS,
+    PERMISSIONS.VIEW_MONITORING
+  ]
+};
