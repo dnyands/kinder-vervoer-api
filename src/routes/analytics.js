@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
-import { checkRole } from '../middleware/roles.js';
+import { requireRole } from '../middleware/roles.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import {
   getDriverCountByProvince,
@@ -20,25 +20,25 @@ const router = express.Router();
 
 router.get('/driver-count-by-province',
   authenticateToken,
-  checkRole(['admin']),
+  requireRole('admin'),
   asyncHandler(getDriverCountByProvince)
 );
 
 router.get('/student-count-by-town',
   authenticateToken,
-  checkRole(['admin']),
+  requireRole('admin'),
   asyncHandler(getStudentCountByTown)
 );
 
 router.get('/average-trip-duration',
   authenticateToken,
-  checkRole(['admin']),
+  requireRole('admin'),
   asyncHandler(getAverageTripDuration)
 );
 
 router.get('/ontime-percentage',
   authenticateToken,
-  checkRole(['admin']),
+  requireRole('admin'),
   asyncHandler(getOntimePercentage)
 );
 

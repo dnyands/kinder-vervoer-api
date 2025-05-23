@@ -5,7 +5,7 @@ import { authenticateToken, authorizeRole } from '../middleware/auth.js';
 import {
   createDriver as createDriverProfile,
   uploadDriverDocument,
-  updateDriverLocation,
+  updateLocation,
   verifyDriverDocuments,
   updateDriverSubscription,
   assignStudentsToDriver,
@@ -264,7 +264,7 @@ router.post('/documents/verify', authenticateToken, authorizeRole(['admin']), ve
 router.post('/subscription', authenticateToken, updateDriverSubscription);
 
 // Location tracking
-router.post('/location', authenticateToken, updateDriverLocation);
+router.post('/location', authenticateToken, updateLocation);
 
 // Student assignment
 router.post('/assign-students', authenticateToken, assignStudentsToDriver);

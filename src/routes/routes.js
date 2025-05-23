@@ -5,29 +5,29 @@ import {
   getRouteHistory
 } from '../controllers/routeController.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { checkRole } from '../middleware/roles.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { requireRole } from '../middleware/roles.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 
 const router = express.Router();
 
 // Generate optimized route
 router.post('/optimize',
   authenticateToken,
-  checkRole(['admin', 'driver']),
+  requireRole('admin', 'driver'),
   asyncHandler(generateOptimizedRoute)
 );
 
 // Get current route for driver and school
 router.get('/:driverId/:schoolId',
   authenticateToken,
-  checkRole(['admin', 'driver']),
+  requireRole('admin', 'driver'),
   asyncHandler(getRoute)
 );
 
 // Get route history for driver
 router.get('/:driverId/history',
   authenticateToken,
-  checkRole(['admin', 'driver']),
+  requireRole('admin', 'driver'),
   asyncHandler(getRouteHistory)
 );
 

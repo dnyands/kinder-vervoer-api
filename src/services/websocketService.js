@@ -1,10 +1,10 @@
-import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 import jwt from 'jsonwebtoken';
 import config from '../config/index.js';
 
 class WebSocketService {
   constructor(server) {
-    this.wss = new WebSocket.Server({ server });
+    this.wss = new WebSocketServer({ server });
     this.clients = new Map(); // Map<userId, WebSocket[]>
     this.driverSubscriptions = new Map(); // Map<driverId, Set<userId>>
 

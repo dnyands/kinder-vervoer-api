@@ -109,12 +109,12 @@ app.use('/api/pickup-routes', pickupRoutesRouter);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/subscriptions', subscriptionsRouter);
 
+// Swagger documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
 // Error handling
 app.use(notFoundHandler);
 app.use(errorHandler);
-
-// Swagger documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));

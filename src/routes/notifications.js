@@ -6,8 +6,8 @@ import {
   getNotificationHistory
 } from '../controllers/notificationController.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { checkRole } from '../middleware/roles.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { requireRole } from '../middleware/roles.js';
+import { asyncHandler } from '../middleware/asyncHandler.js';
 
 const router = express.Router();
 
@@ -25,7 +25,7 @@ router.post('/unregister-device',
 // Test notification (admin only)
 router.post('/send',
   authenticateToken,
-  checkRole(['admin']),
+  requireRole('admin'),
   asyncHandler(sendTestNotification)
 );
 

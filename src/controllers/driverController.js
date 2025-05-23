@@ -63,6 +63,41 @@ export const createDriver = async (req, res) => {
  *       401:
  *         description: Unauthorized
  */
+export const uploadDriverDocument = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    const { driverId, documentType } = req.body;
+    
+    if (!req.files?.document) {
+      return res.status(400).json({ error: 'No document file provided' });
+    }
+    
+    // Upload document to Cloudinary
+    const uploadResult = await uploadToCloudinary(req.files.document[0]);
+    
+    // Store document reference in database
+    const result = await client.query(
+      `INSERT INTO driver_documents (driver_id, document_type, file_url, status)
+       VALUES ($1, $2, $3, 'pending')
+       RETURNING id`,
+      [driverId, documentType, uploadResult.secure_url]
+    );
+    
+    await client.query('COMMIT');
+    res.status(201).json({
+      id: result.rows[0].id,
+      message: 'Document uploaded successfully'
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: 'Failed to upload document' });
+  } finally {
+    client.release();
+  }
+};
+
 export const updateLocation = async (req, res) => {
   const client = await pool.connect();
   try {

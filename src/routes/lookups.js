@@ -1,14 +1,16 @@
 import express from 'express';
 import { validateSchema } from '../middleware/validation.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { checkRole } from '../middleware/roles.js';
+import { requireRole } from '../middleware/roles.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import {
   createLookup,
   getAllLookups,
   getLookupById,
   updateLookup,
-  deleteLookup
+  deleteLookup,
+  getCategories,
+  createCategory
 } from '../controllers/lookupController.js';
 
 const router = express.Router();
@@ -27,7 +29,7 @@ router.get('/categories',
 
 router.post('/categories',
   authenticateToken,
-  checkRole(['admin']),
+  requireRole('admin'),
   validateSchema('categorySchema'),
   asyncHandler(createCategory)
 );
@@ -43,19 +45,19 @@ router.get('/:category/:id',
 
 router.post('/:category',
   authenticateToken,
-  checkRole(['admin']),
+  requireRole('admin'),
   asyncHandler(createLookup)
 );
 
 router.put('/:category/:id',
   authenticateToken,
-  checkRole(['admin']),
+  requireRole('admin'),
   asyncHandler(updateLookup)
 );
 
 router.delete('/:category/:id',
   authenticateToken,
-  checkRole(['admin']),
+  requireRole('admin'),
   asyncHandler(deleteLookup)
 );
 

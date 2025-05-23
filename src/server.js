@@ -1,7 +1,7 @@
 import app from "./app.js";
 import { createServer } from 'http';
 import dotenv from "dotenv";
-import { initializeWebSocket } from './websocket/locationHandler.js';
+import { initializeWebSocket } from './services/websocketService.js';
 
 dotenv.config();
 

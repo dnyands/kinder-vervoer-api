@@ -41,5 +41,17 @@ export default {
     secretKey: process.env.STRIPE_SECRET_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     priceId: process.env.STRIPE_PRICE_ID
+  },
+
+  oneSignal: {
+    appId: process.env.ONESIGNAL_APP_ID,
+    apiKey: process.env.ONESIGNAL_API_KEY
+  },
+
+  firebase: {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    databaseUrl: process.env.FIREBASE_DATABASE_URL
   }
 };

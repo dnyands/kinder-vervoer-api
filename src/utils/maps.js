@@ -1,9 +1,6 @@
-import { Client } from '@google/maps';
+import { Client } from '@googlemaps/google-maps-services-js';
 
-const googleMaps = new Client({
-  key: process.env.GOOGLE_MAPS_API_KEY,
-  Promise: Promise
-});
+const mapsClient = new Client({});
 
 export const calculateRoute = async (students) => {
   try {
@@ -14,16 +11,19 @@ export const calculateRoute = async (students) => {
     }));
     
     // Calculate optimal route using Google Maps Directions API
-    const response = await googleMaps.directions({
-      origin: waypoints[0].location,
-      destination: students[0].dropoff_address, // School address
-      waypoints: waypoints.slice(1),
-      optimize: true,
-      mode: 'driving'
-    }).asPromise();
+    const response = await mapsClient.directions({
+      params: {
+        origin: waypoints[0].location,
+        destination: students[0].dropoff_address, // School address
+        waypoints: waypoints.slice(1),
+        optimize: true,
+        mode: 'driving',
+        key: process.env.GOOGLE_MAPS_API_KEY
+      }
+    });
     
     // Get optimized waypoint order
-    const order = response.json.routes[0].waypoint_order;
+    const order = response.data.routes[0].waypoint_order;
     
     // Return students in optimized order
     return order.map(index => ({

@@ -1,13 +1,13 @@
-import Queue from 'bull';
 import pool from '../db.js';
-import initializeFirebase from '../config/firebase.js';
 import config from '../config/index.js';
+import * as OneSignal from '@onesignal/node-onesignal';
 
-// Initialize Firebase Admin
-const admin = initializeFirebase();
+const configuration = OneSignal.createConfiguration({
+  appKey: config.oneSignal.apiKey,
+  userKey: config.oneSignal.apiKey
+});
 
-// Initialize Bull Queue
-const notificationQueue = new Queue('notifications', config.redis.url);
+const oneSignal = new OneSignal.DefaultApi(configuration);
 
 export const addDeviceToken = async (userId, token) => {
   const client = await pool.connect();
@@ -60,64 +60,42 @@ export const sendNotification = async (userId, title, body, data = {}) => {
       [userId, title, body, JSON.stringify(data)]
     );
 
-    // Add to queue
-    await notificationQueue.add({
-      notificationId: notificationResult.rows[0].id,
-      tokens: deviceTokens,
-      message: {
-        notification: {
-          title,
-          body,
-        },
-        data: {
-          ...data,
-          notificationId: notificationResult.rows[0].id.toString()
-        }
-      }
-    });
+    // Send notification via OneSignal
+    const notification = new OneSignal.Notification();
+    notification.app_id = config.oneSignal.appId;
+    notification.include_player_ids = deviceTokens;
+    notification.headings = { en: title };
+    notification.contents = { en: body };
+    notification.data = {
+      ...data,
+      notificationId: notificationResult.rows[0].id.toString()
+    };
+
+    try {
+      await oneSignal.createNotification(notification);
+      
+      // Update notification status
+      await client.query(
+        `UPDATE notifications 
+         SET status = $1, sent_at = CURRENT_TIMESTAMP
+         WHERE id = $2`,
+        ['sent', notificationResult.rows[0].id]
+      );
+    } catch (error) {
+      console.error('Failed to send notification:', error);
+      
+      await client.query(
+        `UPDATE notifications 
+         SET status = $1, sent_at = CURRENT_TIMESTAMP
+         WHERE id = $2`,
+        ['failed', notificationResult.rows[0].id]
+      );
+    }
   } finally {
     client.release();
   }
 };
 
-// Process notifications in the queue
-notificationQueue.process(async (job) => {
-  const { tokens, message, notificationId } = job.data;
-  const client = await pool.connect();
-
-  try {
-    // Send to Firebase
-    const response = await admin.messaging().sendMulticast({
-      tokens,
-      ...message
-    });
-
-    // Update notification status
-    await client.query(
-      `UPDATE notifications 
-       SET status = $1, sent_at = CURRENT_TIMESTAMP
-       WHERE id = $2`,
-      [
-        response.failureCount === 0 ? 'sent' : 'partial_failure',
-        notificationId
-      ]
-    );
-
-    // Remove failed tokens
-    response.responses.forEach(async (resp, idx) => {
-      if (!resp.success && (
-        resp.error.code === 'messaging/invalid-registration-token' ||
-        resp.error.code === 'messaging/registration-token-not-registered'
-      )) {
-        await removeDeviceToken(tokens[idx]);
-      }
-    });
-
-    return response;
-  } finally {
-    client.release();
-  }
-});
 
 // Helper function to format attendance notifications
 export const sendAttendanceNotification = async (studentId, status, driverId) => {

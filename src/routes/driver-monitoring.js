@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
-import { checkRole } from '../middleware/roles.js';
+import { requireRole } from '../middleware/roles.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { getHeatmap, updateLocation } from '../controllers/driverController.js';
 import { i18n } from '../utils/i18n.js';
@@ -42,7 +42,7 @@ const router = express.Router();
  */
 router.get('/drivers/:id/heatmap',
   authenticateToken,
-  checkRole(['admin', 'driver']),
+  requireRole('admin', 'driver'),
   asyncHandler(getHeatmap)
 );
 
@@ -75,7 +75,7 @@ router.get('/drivers/:id/heatmap',
  */
 router.patch('/drivers/location',
   authenticateToken,
-  checkRole(['driver']),
+  requireRole('driver'),
   i18n.middleware(),
   asyncHandler(updateLocation)
 );

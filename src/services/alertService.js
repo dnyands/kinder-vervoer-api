@@ -1,17 +1,24 @@
-import OneSignal from '@onesignal/node-onesignal';
+import * as OneSignal from '@onesignal/node-onesignal';
 import pool from '../db.js';
 import config from '../config/index.js';
 import { getWebSocketService } from './websocketService.js';
 import { i18n } from '../utils/i18n.js';
 
-const oneSignal = new OneSignal.Client(
-  config.oneSignal.appId,
-  config.oneSignal.apiKey
-);
+const configuration = OneSignal.createConfiguration({
+  appKey: config.oneSignal.apiKey,
+  userKey: config.oneSignal.apiKey
+});
+
+const oneSignal = new OneSignal.DefaultApi(configuration);
 
 class AlertService {
   constructor() {
-    this.wsService = getWebSocketService();
+    try {
+      this.wsService = getWebSocketService();
+    } catch (error) {
+      console.warn('WebSocket service not initialized yet. Real-time notifications will be disabled.');
+      this.wsService = null;
+    }
   }
 
   // Create and send alert
@@ -59,7 +66,7 @@ class AlertService {
         );
 
         // Send in-app notification via WebSocket
-        if (sub.notification_channels.includes('websocket')) {
+        if (this.wsService) {
           this.wsService.broadcastNotification(sub.id, {
             type: 'alert',
             alert: {
@@ -71,17 +78,18 @@ class AlertService {
 
         // Send push notification via OneSignal
         if (sub.notification_channels.includes('push') && sub.device_tokens?.length) {
-          await oneSignal.createNotification({
-            include_player_ids: sub.device_tokens,
-            contents: {
-              en: message
-            },
-            data: {
-              alertId: alert.id,
-              type: alert.type,
-              metadata: alert.metadata
-            }
-          });
+          const notification = new OneSignal.Notification();
+          notification.app_id = config.oneSignal.appId;
+          notification.include_player_ids = sub.device_tokens;
+          notification.contents = {
+            en: message
+          };
+          notification.data = {
+            alertId: alert.id,
+            type: alert.type,
+            metadata: alert.metadata
+          };
+          await oneSignal.createNotification(notification);
         }
       }));
 
