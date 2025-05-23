@@ -24,6 +24,7 @@ import parentRouter from './routes/parent.js';
 import monitoringRoutes from './routes/driver-monitoring.js';
 import analyticsRoutes from './routes/analytics.js';
 import lookupRoutes from './routes/lookups.js';
+import driverCapacityRoutes from './routes/driver-capacity.js';
 import { initializeWebSocket } from './services/websocketService.js';
 import pickupRoutesRouter from './routes/pickup-routes.js';
 import authRouter from './routes/auth.js';
@@ -107,6 +108,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/lookups', lookupRoutes);
 app.use('/api/pickup-routes', pickupRoutesRouter);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/drivers', driverCapacityRoutes);
 app.use('/api/subscriptions', subscriptionsRouter);
 
 // Swagger documentation
