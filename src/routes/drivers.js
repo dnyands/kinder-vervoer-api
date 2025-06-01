@@ -200,7 +200,7 @@ router.get("/:id/current-route", authenticateToken, async (req, res) => {
         json_agg(
           json_build_object(
             'student_id', s.id,
-            'student_name', s.full_name,
+            'student_name', CONCAT(s.first_name, ' ', s.last_name) as student_name,
             'pickup_address', s.pickup_address,
             'pickup_order', ra.pickup_order
           ) ORDER BY ra.pickup_order

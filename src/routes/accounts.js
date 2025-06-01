@@ -24,7 +24,7 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 
     const result = await db.query(
-      `SELECT a.*, u.full_name as user_name, fp.name as fee_period_name 
+      `SELECT a.*, CONCAT(u.first_name, ' ', u.last_name) as user_name, fp.name as fee_period_name 
        FROM accounts a 
        JOIN users u ON a.user_id = u.id 
        JOIN fee_periods fp ON a.fee_period_id = fp.id 

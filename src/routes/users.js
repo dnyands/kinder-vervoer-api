@@ -27,7 +27,7 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 
     const result = await db.query(
-      'SELECT id, email, role, COALESCE(full_name, \'Not Set\') as full_name, COALESCE(phone_number, \'Not Set\') as phone_number, profile_picture_url, is_verified, created_at, updated_at FROM users ORDER BY created_at DESC'
+      'SELECT id, email, role, CONCAT(first_name, \' \', last_name) as full_name, COALESCE(phone_number, \'Not Set\') as phone_number, profile_picture_url, is_verified, created_at, updated_at FROM users ORDER BY created_at DESC'
     );
 
     logger.info('Successfully retrieved users', {

@@ -43,7 +43,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
               'student', (
                 SELECT json_build_object(
                   'id', s.id,
-                  'full_name', s.full_name,
+                  'full_name', CONCAT(s.first_name, ' ', s.last_name) as full_name,
                   'grade', s.grade,
                   'pickup_address', s.pickup_address
                 )

@@ -72,7 +72,7 @@ CREATE TABLE drivers (
   name VARCHAR(255) NOT NULL,
   surname VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
-  phone VARCHAR(20) NOT NULL,
+  phone_number VARCHAR(20) NOT NULL,
   vehicle_capacity INTEGER NOT NULL CHECK (vehicle_capacity > 0),
   status driver_status DEFAULT 'pending',
   verified BOOLEAN DEFAULT false,
@@ -117,7 +117,8 @@ CREATE TABLE driver_schools (
 -- Create students table
 CREATE TABLE students (
   id SERIAL PRIMARY KEY,
-  full_name VARCHAR(255) NOT NULL,
+  first_name VARCHAR(255) NOT NULL,
+  last_name VARCHAR(255) NOT NULL,
   age INTEGER CHECK (age > 0),
   home_address TEXT NOT NULL,
   school_id INTEGER REFERENCES schools(id),

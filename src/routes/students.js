@@ -17,7 +17,7 @@ router.get("/", authenticateToken, async (req, res) => {
       FROM students s
       LEFT JOIN route_assignments ra ON s.id = ra.student_id
       GROUP BY s.id
-      ORDER BY s.full_name
+      ORDER BY s.first_name, s.last_name
     `);
     res.json(result.rows);
   } catch (error) {
@@ -75,7 +75,7 @@ const checkExistingGuardianPhone = async (guardian_phone, excludeId = null) => {
 router.post("/", authenticateToken, authorizeRole(['admin']), async (req, res) => {
   try {
     const { 
-      full_name, 
+      first_name, last_name, 
       grade, 
       guardian_name, 
       guardian_phone, 
@@ -93,7 +93,7 @@ router.post("/", authenticateToken, authorizeRole(['admin']), async (req, res) =
 
     const result = await db.query(
       `INSERT INTO students (
-        full_name, 
+        first_name, last_name, 
         grade, 
         guardian_name, 
         guardian_phone, 
@@ -102,7 +102,7 @@ router.post("/", authenticateToken, authorizeRole(['admin']), async (req, res) =
       ) 
       VALUES ($1, $2, $3, $4, $5, $6) 
       RETURNING *`,
-      [full_name, grade, guardian_name, guardian_phone, pickup_address, dropoff_address]
+      [first_name, last_name, grade, guardian_name, guardian_phone, pickup_address, dropoff_address]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -114,7 +114,7 @@ router.post("/", authenticateToken, authorizeRole(['admin']), async (req, res) =
 router.put("/:id", authenticateToken, authorizeRole(['admin']), async (req, res) => {
   try {
     const { 
-      full_name, 
+      first_name, last_name, 
       grade, 
       guardian_name, 
       guardian_phone, 
@@ -133,7 +133,7 @@ router.put("/:id", authenticateToken, authorizeRole(['admin']), async (req, res)
 
     const result = await db.query(
       `UPDATE students 
-       SET full_name = $1, 
+       SET first_name = $1, last_name = $2, 
            grade = $2, 
            guardian_name = $3, 
            guardian_phone = $4, 
@@ -142,7 +142,7 @@ router.put("/:id", authenticateToken, authorizeRole(['admin']), async (req, res)
            status = $7
        WHERE id = $8 
        RETURNING *`,
-      [full_name, grade, guardian_name, guardian_phone, pickup_address, dropoff_address, status, req.params.id]
+      [first_name, last_name, grade, guardian_name, guardian_phone, pickup_address, dropoff_address, status, req.params.id]
     );
 
     if (result.rows.length === 0) {

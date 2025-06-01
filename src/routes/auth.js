@@ -35,7 +35,7 @@ const router = express.Router();
 // Register new user
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, role, full_name, phone_number } = req.body;
+    const { email, password, role, first_name, last_name, phone_number } = req.body;
     
     // Check if user already exists
     const userExists = await db.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -52,10 +52,10 @@ router.post('/register', async (req, res) => {
 
     // Insert new user
     const result = await db.query(
-      `INSERT INTO users (email, password_hash, role, full_name, phone_number, verification_token) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING id, email, role, full_name, phone_number`,
-      [email, password_hash, role, full_name, phone_number, verification_token]
+      `INSERT INTO users (email, password_hash, role, first_name, last_name, phone_number, verification_token) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7) 
+       RETURNING id, email, role, first_name, last_name, phone_number`,
+      [email, password_hash, role, first_name, last_name, phone_number, verification_token]
     );
 
     // TODO: Send verification email with token
@@ -144,7 +144,7 @@ router.post('/reset-password', async (req, res) => {
 // Update profile
 router.put('/profile', authenticateToken, upload.single('profile_picture'), async (req, res) => {
   try {
-    const { full_name, phone_number } = req.body;
+    const { first_name, last_name, phone_number } = req.body;
     const userId = req.user.id;
 
     let profile_picture_url = undefined;
@@ -156,9 +156,14 @@ router.put('/profile', authenticateToken, upload.single('profile_picture'), asyn
     const values = [];
     let valueIndex = 1;
 
-    if (full_name) {
-      updateFields.push(`full_name = $${valueIndex}`);
-      values.push(full_name);
+    if (first_name) {
+      updateFields.push(`first_name = $${valueIndex}`);
+      values.push(first_name);
+      valueIndex++;
+    }
+    if (last_name) {
+      updateFields.push(`last_name = $${valueIndex}`);
+      values.push(last_name);
       valueIndex++;
     }
 
@@ -180,7 +185,7 @@ router.put('/profile', authenticateToken, upload.single('profile_picture'), asyn
       values.push(userId);
       const result = await db.query(
         `UPDATE users SET ${updateFields.join(', ')} WHERE id = $${valueIndex} 
-         RETURNING id, email, role, full_name, phone_number, profile_picture_url`,
+         RETURNING id, email, role, first_name, last_name, phone_number, profile_picture_url`,
         values
       );
 
@@ -230,7 +235,7 @@ router.post('/login', async (req, res) => {
         id: user.id, 
         email: user.email, 
         role: user.role,
-        full_name: user.full_name,
+        full_name: user.first_name + ' ' + user.last_name,
         phone_number: user.phone_number,
         profile_picture_url: user.profile_picture_url,
         is_verified: user.is_verified
