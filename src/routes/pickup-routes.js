@@ -1,9 +1,32 @@
 import express from 'express';
+import { validateRoute } from '../models/route.model.js';
 import db from '../db.js';
 import { authenticateToken, authorizeRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/pickup-routes:
+ *   get:
+ *     summary: Get all pickup routes
+ *     tags: [PickupRoutes]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of pickup routes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Route'
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // Get all pickup routes
 router.get('/', authenticateToken, async (req, res) => {
   try {
@@ -27,6 +50,35 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/pickup-routes/{id}:
+ *   get:
+ *     summary: Get pickup route by ID
+ *     tags: [PickupRoutes]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Route ID
+ *     responses:
+ *       200:
+ *         description: Pickup route object
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Route'
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       404:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // Get single pickup route by ID
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
@@ -70,8 +122,42 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/pickup-routes:
+ *   post:
+ *     summary: Create a new pickup route
+ *     tags: [PickupRoutes]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Route'
+ *     responses:
+ *       201:
+ *         description: Pickup route created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Route'
+ *       400:
+ *         $ref: '#/components/schemas/Error'
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       403:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // Create new pickup route
 router.post('/', authenticateToken, authorizeRole(['admin']), async (req, res) => {
+  const validationErrors = validateRoute(req.body);
+  if (validationErrors.length > 0) {
+    return res.status(400).json({ errors: validationErrors });
+  }
   try {
     const { name, description, schedule_time } = req.body;
     const result = await db.query(
@@ -84,8 +170,51 @@ router.post('/', authenticateToken, authorizeRole(['admin']), async (req, res) =
   }
 });
 
+/**
+ * @swagger
+ * /api/pickup-routes/{id}:
+ *   put:
+ *     summary: Update a pickup route
+ *     tags: [PickupRoutes]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Route ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Route'
+ *     responses:
+ *       200:
+ *         description: Pickup route updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Route'
+ *       400:
+ *         $ref: '#/components/schemas/Error'
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       403:
+ *         $ref: '#/components/schemas/Error'
+ *       404:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // Update pickup route
 router.put('/:id', authenticateToken, authorizeRole(['admin']), async (req, res) => {
+  const validationErrors = validateRoute(req.body);
+  if (validationErrors.length > 0) {
+    return res.status(400).json({ errors: validationErrors });
+  }
   try {
     const { name, description, schedule_time, status } = req.body;
     const result = await db.query(
@@ -137,6 +266,37 @@ router.post('/:id/assignments', authenticateToken, authorizeRole(['admin']), asy
   }
 });
 
+/**
+ * @swagger
+ * /api/pickup-routes/{id}:
+ *   delete:
+ *     summary: Delete a pickup route
+ *     tags: [PickupRoutes]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Route ID
+ *     responses:
+ *       200:
+ *         description: Pickup route deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       403:
+ *         $ref: '#/components/schemas/Error'
+ *       404:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // Delete pickup route
 router.delete('/:id', authenticateToken, authorizeRole(['admin']), async (req, res) => {
   const client = await db.connect();

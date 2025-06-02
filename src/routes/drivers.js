@@ -1,4 +1,5 @@
 import express from "express";
+import { validateDriver } from '../models/driver.model.js';
 import multer from 'multer';
 import db from "../db.js";
 import { authenticateToken, authorizeRole } from '../middleware/auth.js';
@@ -27,6 +28,28 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+/**
+ * @swagger
+ * /api/drivers:
+ *   get:
+ *     summary: Get all drivers
+ *     tags: [Drivers]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of drivers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Driver'
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // Get all drivers
 router.get("/", authenticateToken, async (req, res) => {
   try {
@@ -42,7 +65,7 @@ router.get("/", authenticateToken, async (req, res) => {
       LEFT JOIN route_assignments ra ON d.id = ra.driver_id
       LEFT JOIN pickup_routes pr ON ra.route_id = pr.id
       GROUP BY d.id
-      ORDER BY d.name
+      ORDER BY d.id
     `);
     res.json(result.rows);
   } catch (error) {
@@ -50,6 +73,35 @@ router.get("/", authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/drivers/{id}:
+ *   get:
+ *     summary: Get driver by ID
+ *     tags: [Drivers]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Driver ID
+ *     responses:
+ *       200:
+ *         description: Driver object
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Driver'
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       404:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // Get driver by ID
 router.get("/:id", authenticateToken, async (req, res) => {
   try {
@@ -109,6 +161,36 @@ const checkExistingDriver = async (contact_number, license_number, excludeId = n
   return null;
 };
 
+/**
+ * @swagger
+ * /api/drivers:
+ *   post:
+ *     summary: Create a new driver
+ *     tags: [Drivers]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Driver'
+ *     responses:
+ *       201:
+ *         description: Driver created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Driver'
+ *       400:
+ *         $ref: '#/components/schemas/Error'
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       403:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 router.post("/", authenticateToken, authorizeRole(['admin']), async (req, res) => {
   try {
     const { 
@@ -119,6 +201,13 @@ router.post("/", authenticateToken, authorizeRole(['admin']), async (req, res) =
       vehicle_registration,
       status
     } = req.body;
+
+    // Validate driver object
+    const driver = { name, contact_number, license_number, vehicle_type, vehicle_registration, status };
+    const validationErrors = validateDriver(driver);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ errors: validationErrors });
+    }
 
     // Check for existing driver details
     const existingErrors = await checkExistingDriver(contact_number, license_number);

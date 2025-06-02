@@ -1,25 +1,36 @@
-import express from 'express';
+import express from "express";
+import { validateSubscription } from '../models/subscription.model.js';
 import db from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
 
-const validateSubscription = (subscription) => {
-  const errors = [];
-  if (!subscription.driver_id) errors.push('Driver ID is required');
-  if (!subscription.subscription_type) errors.push('Subscription type is required');
-  if (!subscription.amount || subscription.amount <= 0) {
-    errors.push('Valid amount is required');
-  }
-  if (!subscription.start_date) errors.push('Start date is required');
-  if (!subscription.end_date) errors.push('End date is required');
-  if (new Date(subscription.start_date) > new Date(subscription.end_date)) {
-    errors.push('Start date must be before end date');
-  }
-  return errors;
-};
 
+/**
+ * @swagger
+ * /api/subscriptions:
+ *   get:
+ *     summary: Get all subscriptions
+ *     tags: [Subscriptions]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of subscriptions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Subscription'
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       403:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // List all subscriptions
 router.get('/', authenticateToken, async (req, res) => {
   try {
@@ -167,6 +178,10 @@ router.get('/check-status/:driverId', async (req, res) => {
 
 // Update subscription
 router.put('/:id', authenticateToken, async (req, res) => {
+  const validationErrors = validateSubscription(req.body);
+  if (validationErrors.length > 0) {
+    return res.status(400).json({ errors: validationErrors });
+  }
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Access denied. Admin only.' });

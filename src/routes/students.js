@@ -1,9 +1,32 @@
 import express from "express";
+import { validateStudent } from '../models/student.model.js';
 import db from "../db.js";
 import { authenticateToken, authorizeRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/students:
+ *   get:
+ *     summary: Get all students
+ *     tags: [Students]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of students
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Student'
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // Get all students
 router.get("/", authenticateToken, async (req, res) => {
   try {
@@ -25,6 +48,35 @@ router.get("/", authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/students/{id}:
+ *   get:
+ *     summary: Get student by ID
+ *     tags: [Students]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Student ID
+ *     responses:
+ *       200:
+ *         description: Student object
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Student'
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       404:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // Get student by ID
 router.get("/:id", authenticateToken, async (req, res) => {
   try {
@@ -53,6 +105,36 @@ router.get("/:id", authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/students:
+ *   post:
+ *     summary: Create a new student
+ *     tags: [Students]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Student'
+ *     responses:
+ *       201:
+ *         description: Student created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Student'
+ *       400:
+ *         $ref: '#/components/schemas/Error'
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       403:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // Create new student
 // Helper function to check for existing guardian phone
 const checkExistingGuardianPhone = async (guardian_phone, excludeId = null) => {
@@ -73,6 +155,10 @@ const checkExistingGuardianPhone = async (guardian_phone, excludeId = null) => {
 };
 
 router.post("/", authenticateToken, authorizeRole(['admin']), async (req, res) => {
+  const validationErrors = validateStudent(req.body);
+  if (validationErrors.length > 0) {
+    return res.status(400).json({ errors: validationErrors });
+  }
   try {
     const { 
       first_name, last_name, 
@@ -110,8 +196,51 @@ router.post("/", authenticateToken, authorizeRole(['admin']), async (req, res) =
   }
 });
 
+/**
+ * @swagger
+ * /api/students/{id}:
+ *   put:
+ *     summary: Update a student
+ *     tags: [Students]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Student ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Student'
+ *     responses:
+ *       200:
+ *         description: Student updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Student'
+ *       400:
+ *         $ref: '#/components/schemas/Error'
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       403:
+ *         $ref: '#/components/schemas/Error'
+ *       404:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // Update student
 router.put("/:id", authenticateToken, authorizeRole(['admin']), async (req, res) => {
+  const validationErrors = validateStudent(req.body);
+  if (validationErrors.length > 0) {
+    return res.status(400).json({ errors: validationErrors });
+  }
   try {
     const { 
       first_name, last_name, 
@@ -154,6 +283,37 @@ router.put("/:id", authenticateToken, authorizeRole(['admin']), async (req, res)
   }
 });
 
+/**
+ * @swagger
+ * /api/students/{id}:
+ *   delete:
+ *     summary: Delete a student
+ *     tags: [Students]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Student ID
+ *     responses:
+ *       200:
+ *         description: Student deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       401:
+ *         $ref: '#/components/schemas/Error'
+ *       403:
+ *         $ref: '#/components/schemas/Error'
+ *       404:
+ *         $ref: '#/components/schemas/Error'
+ *       500:
+ *         $ref: '#/components/schemas/Error'
+ */
 // Delete student
 router.delete("/:id", authenticateToken, authorizeRole(['admin']), async (req, res) => {
   const client = await db.connect();
